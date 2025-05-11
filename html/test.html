@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Pitch Detector</title>
+    <style>
+      :root {
+        --primary: #4f46e5;
+        --primary-dark: #4338ca;
+        --secondary: #818cf8;
+        --background: #f9fafb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --text-light: #6b7280;
+        --border: #e5e7eb;
+        --success: #10b981;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+        background-color: var(--background);
+        color: var(--text);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 800px;
+        padding: 2rem;
+        box-sizing: border-box;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--primary);
+      }
+
+      .subtitle {
+        font-size: 1rem;
+        color: var(--text-light);
+        margin-top: 0.5rem;
+      }
+
+      .card {
+        background-color: var(--card);
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .file-input-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem;
+        border: 2px dashed var(--border);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .file-input-container:hover {
+        border-color: var(--primary);
+        background-color: rgba(79, 70, 229, 0.05);
+      }
+
+      .file-input-container svg {
+        width: 48px;
+        height: 48px;
+        color: var(--primary);
+        margin-bottom: 1rem;
+      }
+
+      .file-input-container p {
+        margin: 0;
+        color: var(--text-light);
+      }
+
+      #fileInput {
+        display: none;
+      }
+
+      .visualizer-container {
+        width: 100%;
+        height: 150px;
+        position: relative;
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        margin: 1.5rem 0;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+      }
+
+      .pitch-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        margin-top: 1rem;
+      }
+
+      .pitch-value {
+        font-size: 3rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--primary);
+      }
+
+      .note-display {
+        font-size: 1.5rem;
+        margin-top: 0.5rem;
+        color: var(--text);
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .btn {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+      }
+
+      .btn:hover {
+        background-color: var(--primary-dark);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .volume-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 1rem;
+      }
+
+      .volume-control svg {
+        width: 20px;
+        height: 20px;
+        color: var(--text);
+      }
+
+      input[type="range"] {
+        width: 100px;
+        height: 4px;
+        -webkit-appearance: none;
+        background: var(--border);
+        border-radius: 2px;
+        outline: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--primary);
+        cursor: pointer;
+      }
+
+      .history-container {
+        margin-top: 2rem;
+      }
+
+      .history-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .history-title button {
+        background: none;
+        border: none;
+        color: var(--text-light);
+        cursor: pointer;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .history-title button:hover {
+        color: var(--primary);
+      }
+
+      .history-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+      }
+
+      .history-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .history-item:last-child {
+        border-bottom: none;
+      }
+
+      .history-note {
+        font-weight: 600;
+        width: 60px;
+      }
+
+      .history-freq {
+        color: var(--text-light);
+      }
+
+      .history-time {
+        margin-left: auto;
+        color: var(--text-light);
+        font-size: 0.875rem;
+      }
+
+      .no-data {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-light);
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        background-color: rgba(0, 0, 0, 0.05);
+        font-size: 0.875rem;
+      }
+
+      .status.recording {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: rgb(239, 68, 68);
+      }
+
+      .status.ready {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+      }
+
+      .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: currentColor;
+      }
+
+      @media (max-width: 640px) {
+        .container {
+          padding: 1rem;
+        }
+
+        .controls {
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .volume-control {
+          margin-left: 0;
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Audio Pitch Detector</h1>
+        <p class="subtitle">
+          Upload an audio file to analyze its pitch in real-time
+        </p>
+      </header>
+
+      <div class="card">
+        <label for="fileInput" class="file-input-container">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+            />
+          </svg>
+          <p>Click to upload audio file or drag and drop</p>
+          <input type="file" id="fileInput" accept="audio/*" />
+        </label>
+
+        <div id="audioFileInfo" class="status">
+          <div class="status-indicator"></div>
+          <span>No file selected</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="visualizer-container">
+          <canvas id="visualizer"></canvas>
+        </div>
+
+        <div class="pitch-display">
+          <p class="pitch-value" id="pitchValue">-- Hz</p>
+          <p class="note-display" id="noteDisplay">--</p>
+        </div>
+
+        <div class="controls">
+          <button id="playPauseBtn" class="btn" disabled>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Play
+          </button>
+
+          <div class="volume-control">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+              />
+            </svg>
+            <input
+              type="range"
+              id="volumeControl"
+              min="0"
+              max="1"
+              step="0.01"
+              value="1"
+              disabled
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="card history-container">
+        <div class="history-title">
+          <span>Pitch History</span>
+          <button id="clearHistoryBtn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Clear
+          </button>
+        </div>
+        <div class="history-list" id="historyList">
+          <div class="no-data">No pitch data available</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // DOM Elements
+      const fileInput = document.getElementById("fileInput");
+      const audioFileInfo = document.getElementById("audioFileInfo");
+      const visualizer = document.getElementById("visualizer");
+      const pitchValue = document.getElementById("pitchValue");
+      const noteDisplay = document.getElementById("noteDisplay");
+      const playPauseBtn = document.getElementById("playPauseBtn");
+      const volumeControl = document.getElementById("volumeControl");
+      const historyList = document.getElementById("historyList");
+      const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+
+      // Audio Context and Variables
+      let audioContext;
+      let analyser;
+      let sourceNode;
+      let gainNode;
+      let bufferLength;
+      let dataArray;
+      let animationId;
+      let audioBuffer;
+      let isPlaying = false;
+      let pitchHistory = [];
+
+      // Canvas Context
+      const canvasCtx = visualizer.getContext("2d");
+
+      // Initialize canvas dimensions
+      function setupCanvas() {
+        visualizer.width = visualizer.offsetWidth;
+        visualizer.height = visualizer.offsetHeight;
+      }
+
+      // Note frequencies for identification
+      const noteFrequencies = {
+        C: 261.63,
+        "C#": 277.18,
+        D: 293.66,
+        "D#": 311.13,
+        E: 329.63,
+        F: 349.23,
+        "F#": 369.99,
+        G: 392.0,
+        "G#": 415.3,
+        A: 440.0,
+        "A#": 466.16,
+        B: 493.88,
+      };
+
+      // Convert frequency to musical note
+      function frequencyToNote(frequency) {
+        if (!frequency) return "--";
+
+        // Calculate the note in the scale (A4 = 440Hz)
+        const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+        const noteInt = Math.round(noteNum) + 69; // A4 is MIDI note 69
+
+        const octave = Math.floor(noteInt / 12) - 1;
+        const noteName = [
+          "C",
+          "C#",
+          "D",
+          "D#",
+          "E",
+          "F",
+          "F#",
+          "G",
+          "G#",
+          "A",
+          "A#",
+          "B",
+        ][noteInt % 12];
+
+        return `${noteName}${octave}`;
+      }
+
+      // Format timestamp for history
+      function formatTimestamp(time) {
+        return new Date(time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
+
+      // Update pitch history
+      function updatePitchHistory(pitch, note) {
+        if (!pitch) return;
+
+        const now = Date.now();
+        pitchHistory.unshift({
+          pitch: pitch,
+          note: note,
+          time: now,
+        });
+
+        // Limit history to 50 entries
+        if (pitchHistory.length > 50) {
+          pitchHistory.pop();
+        }
+
+        renderPitchHistory();
+      }
+
+      // Render pitch history
+      function renderPitchHistory() {
+        if (pitchHistory.length === 0) {
+          historyList.innerHTML =
+            '<div class="no-data">No pitch data available</div>';
+          return;
+        }
+
+        historyList.innerHTML = "";
+        pitchHistory.forEach((item) => {
+          const historyItem = document.createElement("div");
+          historyItem.className = "history-item";
+          historyItem.innerHTML = `
+          <span class="history-note">${item.note}</span>
+          <span class="history-freq">${item.pitch.toFixed(2)} Hz</span>
+          <span class="history-time">${formatTimestamp(item.time)}</span>
+        `;
+          historyList.appendChild(historyItem);
+        });
+      }
+
+      // Clear pitch history
+      clearHistoryBtn.addEventListener("click", () => {
+        pitchHistory = [];
+        renderPitchHistory();
+      });
+
+      // File drop handling
+      const fileInputContainer = document.querySelector(
+        ".file-input-container"
+      );
+
+      fileInputContainer.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        fileInputContainer.style.borderColor = "var(--primary)";
+        fileInputContainer.style.backgroundColor = "rgba(79, 70, 229, 0.1)";
+      });
+
+      fileInputContainer.addEventListener("dragleave", () => {
+        fileInputContainer.style.borderColor = "var(--border)";
+        fileInputContainer.style.backgroundColor = "";
+      });
+
+      fileInputContainer.addEventListener("drop", (e) => {
+        e.preventDefault();
+        fileInputContainer.style.borderColor = "var(--border)";
+        fileInputContainer.style.backgroundColor = "";
+
+        if (e.dataTransfer.files.length > 0) {
+          fileInput.files = e.dataTransfer.files;
+          loadAudio();
+        }
+      });
+
+      // Load audio file
+      fileInput.addEventListener("change", loadAudio);
+
+      function loadAudio() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Reset previous audio if it exists
+        if (sourceNode) {
+          sourceNode.stop();
+          cancelAnimationFrame(animationId);
+          isPlaying = false;
+          updatePlayPauseButton();
+        }
+
+        // Update file info
+        audioFileInfo.innerHTML = `
+        <div class="status-indicator"></div>
+        <span>Loading: ${file.name}</span>
+      `;
+
+        // Create audio context if it doesn't exist
+        if (!audioContext) {
+          audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+        }
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            audioBuffer = await audioContext.decodeAudioData(reader.result);
+
+            // Update file info with success
+            audioFileInfo.className = "status ready";
+            audioFileInfo.innerHTML = `
+            <div class="status-indicator"></div>
+            <span>Ready: ${file.name}</span>
+          `;
+
+            // Enable play button and volume control
+            playPauseBtn.disabled = false;
+            volumeControl.disabled = false;
+
+            // Set up play button to start playback
+            playPauseBtn.addEventListener("click", togglePlayback);
+          } catch (error) {
+            console.error("Error decoding audio data:", error);
+            audioFileInfo.innerHTML = `
+            <div class="status-indicator"></div>
+            <span>Error: Could not decode audio file</span>
+          `;
+          }
+        };
+
+        reader.onerror = () => {
+          audioFileInfo.innerHTML = `
+          <div class="status-indicator"></div>
+          <span>Error: Could not read file</span>
+        `;
+        };
+
+        reader.readAsArrayBuffer(file);
+      }
+
+      // Toggle playback
+      function togglePlayback() {
+        if (isPlaying) {
+          pauseAudio();
+        } else {
+          playAudio();
+        }
+      }
+
+      // Play audio
+      function playAudio() {
+        if (!audioBuffer) return;
+
+        // Stop previous playback if any
+        if (sourceNode) {
+          sourceNode.stop();
+          cancelAnimationFrame(animationId);
+        }
+
+        // Create source node
+        sourceNode = audioContext.createBufferSource();
+        sourceNode.buffer = audioBuffer;
+
+        // Create gain node for volume control
+        gainNode = audioContext.createGain();
+        gainNode.gain.value = volumeControl.value;
+
+        // Create analyser for pitch detection
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        bufferLength = analyser.fftSize;
+        dataArray = new Float32Array(bufferLength);
+
+        // Connect nodes
+        sourceNode.connect(analyser);
+        analyser.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Start playback
+        sourceNode.start();
+        isPlaying = true;
+        updatePlayPauseButton();
+
+        // Start visualization and pitch detection
+        visualize();
+
+        // When playback ends
+        sourceNode.onended = () => {
+          isPlaying = false;
+          updatePlayPauseButton();
+          cancelAnimationFrame(animationId);
+        };
+
+        // Update status
+        audioFileInfo.className = "status recording";
+        audioFileInfo.innerHTML = `
+        <div class="status-indicator"></div>
+        <span>Playing: ${fileInput.files[0].name}</span>
+      `;
+      }
+
+      // Pause audio
+      function pauseAudio() {
+        if (sourceNode) {
+          sourceNode.stop();
+          isPlaying = false;
+          updatePlayPauseButton();
+          cancelAnimationFrame(animationId);
+
+          // Update status
+          audioFileInfo.className = "status ready";
+          audioFileInfo.innerHTML = `
+          <div class="status-indicator"></div>
+          <span>Ready: ${fileInput.files[0].name}</span>
+        `;
+        }
+      }
+
+      // Update play/pause button
+      function updatePlayPauseButton() {
+        if (isPlaying) {
+          playPauseBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Pause
+        `;
+        } else {
+          playPauseBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Play
+        `;
+        }
+      }
+
+      // Volume control
+      volumeControl.addEventListener("input", () => {
+        if (gainNode) {
+          gainNode.gain.value = volumeControl.value;
+        }
+      });
+
+      // Visualize audio
+      function visualize() {
+        if (!analyser) return;
+
+        analyser.getFloatTimeDomainData(dataArray);
+
+        // Detect pitch
+        const pitch = autoCorrelate(dataArray, audioContext.sampleRate);
+        const note = frequencyToNote(pitch);
+
+        // Update pitch display
+        pitchValue.textContent = pitch ? `${pitch.toFixed(2)} Hz` : "-- Hz";
+        noteDisplay.textContent = note;
+
+        // Update history every second (roughly)
+        if (Math.random() < 0.05 && pitch) {
+          updatePitchHistory(pitch, note);
+        }
+
+        // Draw waveform
+        canvasCtx.clearRect(0, 0, visualizer.width, visualizer.height);
+        canvasCtx.fillStyle = "rgb(249, 250, 251)";
+        canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
+
+        canvasCtx.lineWidth = 2;
+        canvasCtx.strokeStyle = "rgb(79, 70, 229)";
+        canvasCtx.beginPath();
+
+        const sliceWidth = visualizer.width / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+          const v = dataArray[i] * 0.5;
+          const y = (v * visualizer.height) / 2 + visualizer.height / 2;
+
+          if (i === 0) {
+            canvasCtx.moveTo(x, y);
+          } else {
+            canvasCtx.lineTo(x, y);
+          }
+
+          x += sliceWidth;
+        }
+
+        canvasCtx.lineTo(visualizer.width, visualizer.height / 2);
+        canvasCtx.stroke();
+
+        // Continue animation loop
+        animationId = requestAnimationFrame(visualize);
+      }
+
+      // Autocorrelation function for pitch detection
+      function autoCorrelate(buffer, sampleRate) {
+        let SIZE = buffer.length;
+        let rms = 0;
+
+        // Calculate RMS to see if there's enough signal
+        for (let i = 0; i < SIZE; i++) {
+          let val = buffer[i];
+          rms += val * val;
+        }
+        rms = Math.sqrt(rms / SIZE);
+
+        // Not enough signal
+        if (rms < 0.01) return null;
+
+        // Trim leading/trailing silence
+        let r1 = 0,
+          r2 = SIZE - 1;
+        while (buffer[r1] < 0.001 && r1 < SIZE / 2) r1++;
+        while (buffer[r2] < 0.001 && r2 > SIZE / 2) r2--;
+
+        buffer = buffer.slice(r1, r2);
+        SIZE = buffer.length;
+
+        // Calculate autocorrelation
+        let c = new Array(SIZE).fill(0);
+        for (let i = 0; i < SIZE; i++) {
+          for (let j = 0; j < SIZE - i; j++) {
+            c[i] = c[i] + buffer[j] * buffer[j + i];
+          }
+        }
+
+        // Find first valley
+        let d = 0;
+        while (c[d] > c[d + 1]) d++;
+
+        // Find the peak after the valley
+        let maxval = -1,
+          maxpos = -1;
+        for (let i = d; i < SIZE; i++) {
+          if (c[i] > maxval) {
+            maxval = c[i];
+            maxpos = i;
+          }
+        }
+
+        // No peak found
+        if (maxpos === 0) return null;
+
+        let T0 = maxpos;
+
+        // Improve accuracy with interpolation
+        let x1 = c[T0 - 1],
+          x2 = c[T0],
+          x3 = c[T0 + 1];
+        let a = (x1 + x3 - 2 * x2) / 2;
+        let b = (x3 - x1) / 2;
+
+        if (a) T0 = T0 - b / (2 * a);
+
+        return sampleRate / T0;
+      }
+
+      // Handle window resize
+      window.addEventListener("resize", () => {
+        setupCanvas();
+      });
+
+      // Initialize
+      setupCanvas();
+    </script>
+  </body>
+</html>
