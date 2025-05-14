@@ -1,0 +1,8 @@
+* {
+}
+body {
+  background-color: rgb(56, 111, 159);
+}
+.container div span h1 {
+  color: blue;
+}
