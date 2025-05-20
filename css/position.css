@@ -1,0 +1,36 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+body {
+  height: 200vh;
+  /* position: relative; */
+}
+
+.container {
+  height: 100vh;
+  border: 4px solid black;
+}
+
+.item {
+  height: 20%;
+  border: 2px solid red;
+}
+.item1 {
+  /* position: fixed; */
+
+  top: 0;
+  border: 2px solid blue;
+  width: 100%;
+  background-color: aqua;
+}
+.item2 {
+  width: 10rem;
+  /* position: sticky; */
+  /* position: absolute;/ */
+  bottom: 0;
+  right: 2rem;
+  /* left: 2rem; */
+  /* margin-top: 20%; */
+}
