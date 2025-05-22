@@ -1,0 +1,55 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+nav {
+  background-color: rgb(4, 78, 54);
+  color: white;
+  height: 5rem;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.logo {
+  height: 100%;
+  width: 8rem;
+  padding: 1rem;
+}
+img {
+  height: 100%;
+  width: 100%;
+}
+.navLink {
+  display: flex;
+  gap: 1rem;
+}
+.navLink li {
+  list-style: none;
+  padding: 1rem;
+  color: white;
+  /* background-color: rgb(23, 163, 163); */
+}
+.navLink li a {
+  text-decoration: none;
+  list-style: none;
+  padding: 1rem;
+  color: white;
+  &:hover {
+    color: salmon;
+  }
+  &:active {
+    color: rgb(66, 238, 238);
+  }
+}
+.btns {
+  display: flex;
+  gap: 1rem;
+}
+.btns button {
+  border-radius: 0.3rem;
+  padding: 0.5rem 1rem;
+  &:hover{
+    background-color: yellowgreen;
+  }
+}
