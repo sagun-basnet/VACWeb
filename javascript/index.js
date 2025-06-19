@@ -27,7 +27,7 @@ var b = 9;
 switch (a) {
   case 1:
     var c = a + b;
-    console.log("Add: " + c);
+    console.log("Add: ", c);
     break;
   case 2:
     console.log("Value is 2");
