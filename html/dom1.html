@@ -18,12 +18,50 @@
         border-radius: 0.8rem;
         padding: 0.5rem 1rem;
       }
+      .btnDiv {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+      .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .btn-red {
+        border: 2px solid red;
+        color: red;
+      }
+      .btn-green {
+        border: 2px solid green;
+        color: green;
+      }
+      .btn-blue {
+        border: 2px solid blue;
+        color: blue;
+      }
+      .btn-yellow {
+        border: 2px solid turquoise;
+        color: turquoise;
+      }
+      .btn-black {
+        border: 2px solid black;
+        color: black;
+      }
     </style>
   </head>
   <body>
-    <button>Click</button>
-    <button class="reset">Reset</button>
-    <div class="box"></div>
+    <div class="btnDiv">
+      <button class="btn btn-red">RED</button>
+      <button class="btn btn-green">GREEN</button>
+      <button class="btn btn-blue">BLUE</button>
+      <button class="btn btn-yellow">TURQUOISE</button>
+      <button class="btn btn-black">BLACK</button>
+    </div>
 
     <script src="../javascript/dom1.js"></script>
   </body>
